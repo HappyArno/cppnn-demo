@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>28x28 Drawing Canvas to PGM</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="28" height="28">
+        Your browser doesn't support canvas
+    </canvas>
+    <br>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveAsPGM()">Save as PGM</button>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        // Change the size of canvas
+        const scale = 10;
+        canvas.style.width = canvas.width * scale + "px";
+        canvas.style.height = canvas.height * scale + "px";
+        // Set up canvas
+        clearCanvas();
+        ctx.lineWidth = 2;
+
+        // Drawing
+        let isDrawing = false;
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        function startDrawing(e) {
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo((e.clientX - canvas.offsetLeft) / scale, (e.clientY - canvas.offsetTop) / scale);
+        }
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.lineTo((e.clientX - canvas.offsetLeft) / scale, (e.clientY - canvas.offsetTop) / scale);
+            ctx.stroke();
+        }
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Clear the Canvas
+        function clearCanvas() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Save the canvas as a .pgm file
+        function saveAsPGM() {
+            // Iterate over each pixel and convert to grayscale
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let pgmData = [];
+            for (let i = 0; i < pixels.length; i += 4) {
+                const grayscale = Math.round((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3);
+                pgmData.push(grayscale);
+            }
+            pgmData = new Uint8Array(pgmData);
+            // Create a Blob and save it as a .pgm file
+            const pgmHeader = `P5\n${canvas.width} ${canvas.height}\n255\n`;
+            const blob = new Blob([pgmHeader, pgmData], { type: 'image/x-portable-graymap' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'image.pgm';
+            a.click();
+        }
+    </script>
+</body>
+
+</html>
